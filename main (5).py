@@ -3,65 +3,73 @@ import asyncio
 import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-import nest_asyncio
-
-# Применяем nest_asyncio для Replit
-nest_asyncio.apply()
-
-# Токен бота
-API_TOKEN = os.getenv("TELEGRAM_TOKEN", "8284654414:AAFRf1ZqFRDT5TKa0wl2KI4Vh6hn8cODoes")
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Инициализация
+# Токен из переменных окружения Railway
+API_TOKEN = os.getenv("API_TOKEN")
+
+# Проверка токена
+if not API_TOKEN:
+    logger.error("❌ ОШИБКА: API_TOKEN не найден!")
+    logger.error("Добавь переменную API_TOKEN в настройках Railway")
+    exit(1)
+
+logger.info(f"✅ Токен найден: {API_TOKEN[:10]}...")
+
+# Инициализация бота
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
-# ========== КОМАНДЫ ==========
+# ========== КОМАНДЫ БОТА ==========
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    await message.answer("🎉 Бот работает на Replit!\n"
-                        "📞 Напиши /help")
+    await message.answer("🎉 Бот работает на Railway!\n"
+                        "✅ Вебхуки: НЕТ (используем polling)\n"
+                        "📞 Команды: /start /help /id /ping")
 
 @dp.message(Command("help"))
 async def cmd_help(message: types.Message):
-    await message.answer("ℹ️ Команды:\n"
-                        "/start - Проверка\n"
-                        "/help - Помощь\n"
-                        "/id - Твой ID\n"
-                        "/test - Тест")
+    await message.answer("ℹ️ Доступные команды:\n"
+                        "/start - Проверка работы\n"
+                        "/help - Эта справка\n"
+                        "/id - Показать ID\n"
+                        "/ping - Проверка связи")
 
 @dp.message(Command("id"))
 async def cmd_id(message: types.Message):
-    await message.answer(f"🆔 Твой ID: {message.from_user.id}\n"
+    await message.answer(f"🆔 Ваш ID: {message.from_user.id}\n"
                         f"💬 Чат ID: {message.chat.id}")
 
-@dp.message(Command("test"))
-async def cmd_test(message: types.Message):
-    await message.answer("✅ Тест пройден! Бот жив!")
+@dp.message(Command("ping"))
+async def cmd_ping(message: types.Message):
+    await message.answer("🏓 Pong! Бот жив!")
 
 @dp.message()
 async def echo(message: types.Message):
     if message.text.startswith('/'):
         return
-    await message.answer(f"📝 Вы сказали: {message.text}")
+    await message.answer(f"📝 Вы написали: {message.text}")
 
-# ========== ЗАПУСК ==========
+# ========== ЗАПУСК БОТА ==========
 async def main():
-    """Запуск бота"""
-    logger.info("🚀 Запускаем бота...")
+    """Основная функция запуска"""
+    logger.info("🚀 Запуск бота на Railway...")
     
-    # Получаем информацию о боте
-    bot_info = await bot.get_me()
-    logger.info(f"🤖 Бот: @{bot_info.username}")
-    
-    # Запускаем
-    await dp.start_polling(bot)
+    try:
+        # Получаем информацию о боте
+        bot_info = await bot.get_me()
+        logger.info(f"🤖 Бот: @{bot_info.username} (ID: {bot_info.id})")
+        
+        # Запускаем polling
+        logger.info("🔄 Начинаем polling...")
+        await dp.start_polling(bot)
+        
+    except Exception as e:
+        logger.error(f"❌ Ошибка при запуске: {e}")
+        logger.error("Возможно Railway блокирует соединение с Telegram")
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except Exception as e:
-        logger.error(f"Ошибка: {e}")
+    asyncio.run(main())
